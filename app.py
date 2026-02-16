@@ -7,12 +7,10 @@ from sklearn.impute import KNNImputer
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, recall_score, precision_score
-
+from sklearn.preprocessing import LabelEncoder
 st.set_page_config(page_title="MediScan AI", layout="wide")
 
-# ======================================================
 # PREMIUM MEDICAL THEME
-# ======================================================
 
 st.markdown("""
 <style>
@@ -86,13 +84,13 @@ details {
 </style>
 """, unsafe_allow_html=True)
 
-# ======================================================
+
 # HEADER SECTION
-# ======================================================
+
 
 st.markdown("""
 <div style='text-align:center; padding:20px;'>
-    <h1 style='color:#003366;'>🩺 MediScan AI</h1>
+    <h1 style='color:#003366;'> MediScan AI</h1>
     <p style='font-size:20px; color:#0056b3;'>
         Intelligent Clinical Decision Support System for CKD
     </p>
@@ -104,20 +102,17 @@ st.markdown("<hr style='border: 1px solid #CCE0FF;'>", unsafe_allow_html=True)
 # Clinical disclaimer
 st.info("⚕ This AI system assists in early CKD risk detection. It is not a replacement for professional medical diagnosis.")
 
-# ======================================================
-# LOAD DATA
-# ======================================================
 
+# LOAD DATA
 @st.cache_data
 def load_data():
     return pd.read_csv("mediscan_ckd_diagnostic.csv")
 
 df = load_data()
 
-# ======================================================
-# TRAIN MODEL
-# ======================================================
 
+# TRAIN MODEL
+# Label Encoding
 @st.cache_resource
 def train_model(df):
 
@@ -139,14 +134,16 @@ def train_model(df):
     X_train, X_test, y_train, y_test = train_test_split(
         X_scaled, y, test_size=0.2, random_state=42
     )
+    best_model= RandomForestClassifier(random_state=42)
+    param_grid = {    'n_estimators': [50, 100, 200],
+    'max_depth': [5, 10, 15, 20, None],
+    'min_samples_split': [2, 5, 10]
+}
 
     grid = GridSearchCV(
-        RandomForestClassifier(),
-        {"n_estimators": [100], "max_depth": [None]},
-        cv=3,
-        scoring="recall"
-    )
-
+    best_model, param_grid=param_grid, 
+    cv=3, n_jobs=-1
+)
     grid.fit(X_train, y_train)
     model = grid.best_estimator_
 
@@ -160,11 +157,9 @@ def train_model(df):
 
 model, imputer, scaler, feature_columns, accuracy, recall, precision = train_model(df)
 
-# ======================================================
 # SIDEBAR
-# ======================================================
 
-st.sidebar.header("📊 Model Performance")
+st.sidebar.header(" Model Performance")
 st.sidebar.metric("Accuracy", f"{accuracy:.3f}")
 st.sidebar.metric("Recall", f"{recall:.3f}")
 st.sidebar.metric("Precision", f"{precision:.3f}")
@@ -175,7 +170,7 @@ st.sidebar.write("**Imputation:** KNN")
 st.sidebar.write("**Scaling:** StandardScaler")
 
 st.sidebar.markdown("---")
-with st.sidebar.expander("👥 Project Team Members"):
+with st.sidebar.expander(" Project Team Members"):
     st.markdown("""
     - **Devaj TN**
     - **Sahil Shahanas**
@@ -184,9 +179,7 @@ with st.sidebar.expander("👥 Project Team Members"):
     - **Shihan Shoukathali**
     """)
 
-# ======================================================
 # INPUT SECTION
-# ======================================================
 
 
 
@@ -217,13 +210,11 @@ data["Diabetes_Mellitus"] = col2.selectbox("Diabetes", ["No","Yes"])
 st.markdown('</div>', unsafe_allow_html=True)
 
 # Centered Button
-col_btn1, col_btn2, col_btn3 = st.columns([1,2,1])
+col_btn1, col_btn2, cwol_btn3 = st.columns([1,2,1])
 with col_btn2:
     analyze = st.button(" Analyze CKD Risk")
 
-# ======================================================
 # PREDICTION
-# ======================================================
 
 if analyze:
 
@@ -244,13 +235,11 @@ if analyze:
     st.subheader("Diagnosis Result")
 
     if prediction == 1:
-        st.error(f"⚠ High Risk of CKD ({probability*100:.1f}%)")
+        st.error(f" High Risk of CKD ({probability*100:.1f}%)")
     else:
-        st.success(f"✅ Low Risk ({probability*100:.1f}%)")
+        st.success(f" Low Risk ({probability*100:.1f}%)")
 
-# ======================================================
 # FEATURE IMPORTANCE
-# ======================================================
 
 with st.expander("View Model Feature Importance"):
 
@@ -267,9 +256,9 @@ with st.expander("View Model Feature Importance"):
     plt.tight_layout()
     st.pyplot(fig)
 
-# ======================================================
+
 # FOOTER
-# ======================================================
+
 
 st.markdown("""
 <div class="footer">
